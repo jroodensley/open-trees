@@ -3,35 +3,41 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatCommand, formatError, renderTable } from "./format";
 import { getRepoRoot, getWorktrees, runGit } from "./git";
 import { pathsEqual, resolveWorktreePath } from "./paths";
+import { type ToolResult, err, ok } from "./result";
 import { summarizePorcelain } from "./status";
 import { branchLabel, pathExists } from "./worktree-helpers";
 
 export const statusWorktrees = async (
   ctx: PluginInput,
   options: { path?: string; all?: boolean; porcelain?: boolean },
-) => {
+): Promise<ToolResult> => {
   const repoRoot = await getRepoRoot(ctx);
-  if (!repoRoot.ok) return repoRoot.error;
+  if (!repoRoot.ok) return err(repoRoot.error);
 
   const worktreesResult = await getWorktrees(ctx, repoRoot.path);
-  if (!worktreesResult.ok) return worktreesResult.error;
+  if (!worktreesResult.ok) return err(worktreesResult.error);
 
   const includeAll = options.all ?? true;
   let targets = worktreesResult.worktrees;
 
   if (options.path) {
-    const resolved = resolveWorktreePath(repoRoot.path, options.path);
+    const resolvedResult = resolveWorktreePath(repoRoot.path, options.path);
+    if (!resolvedResult.ok) return err(resolvedResult.error);
+    const resolved = resolvedResult.path;
     targets = worktreesResult.worktrees.filter((worktree) => pathsEqual(worktree.path, resolved));
 
     if (targets.length === 0) {
-      return formatError("Worktree path not found.", {
-        hint: "Use worktree_list to see available paths.",
-      });
+      return err(
+        formatError("Worktree path not found.", {
+          hint: 'Use worktree_overview { "view": "list" } to see available paths.',
+        }),
+      );
     }
   } else if (!includeAll) {
     const current = worktreesResult.worktrees.find((worktree) =>
       pathsEqual(worktree.path, ctx.worktree),
     );
+    // Fall back to the first known worktree when the current one is missing.
     targets = current ? [current] : worktreesResult.worktrees.slice(0, 1);
   }
 
@@ -68,13 +74,13 @@ export const statusWorktrees = async (
       rows.push([branchLabel(worktree), worktree.path, "error", "-", "-", "-"]);
 
       const detailLine = statusResult.stderr || statusResult.stdout || "";
-      const detail = detailLine.split(/\r?\n/)[0] || "status failed";
-      notes.push(`${worktree.path}: ${detail}`);
+      const detailMessage = detailLine.split(/\r?\n/)[0] || "status failed";
+      notes.push(`${worktree.path}: ${detailMessage}`);
 
       if (options.porcelain) {
         details.push(`${worktree.path} (${branchLabel(worktree)})`);
         details.push("```");
-        details.push(`(error) ${detail}`);
+        details.push(`(error) ${detailMessage}`);
         details.push("```");
       }
 
@@ -118,5 +124,5 @@ export const statusWorktrees = async (
   const statusCommand = formatCommand(["git", "status", "--porcelain"]);
   sections.push(`Commands:\n- ${listCommand}\n- ${statusCommand} (per worktree)`);
 
-  return sections.join("\n\n");
+  return ok(sections.join("\n\n"));
 };

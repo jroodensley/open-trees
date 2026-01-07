@@ -1,7 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
 
+import { ensureConfigDir, getOpenTreesPath } from "./config";
 import { formatError } from "./format";
 
 export type WorktreeSessionEntry = {
@@ -15,13 +14,7 @@ type WorktreeState = {
   entries: WorktreeSessionEntry[];
 };
 
-const getConfigRoot = () => {
-  const envPath = process.env.XDG_CONFIG_HOME;
-  return envPath ? path.resolve(envPath) : path.join(os.homedir(), ".config");
-};
-
-export const getStatePath = () =>
-  path.join(getConfigRoot(), "opencode", "open-trees", "state.json");
+export const getStatePath = () => getOpenTreesPath("state.json");
 
 const isValidEntry = (value: unknown): value is WorktreeSessionEntry => {
   if (!value || typeof value !== "object") return false;
@@ -39,10 +32,6 @@ const normalizeState = (value: unknown): WorktreeState => {
   const record = value as Record<string, unknown>;
   const entries = Array.isArray(record.entries) ? record.entries.filter(isValidEntry) : [];
   return { entries };
-};
-
-const ensureStateDir = async (statePath: string) => {
-  await mkdir(path.dirname(statePath), { recursive: true });
 };
 
 export const readState = async (): Promise<
@@ -76,9 +65,22 @@ export const readState = async (): Promise<
 };
 
 const writeState = async (statePath: string, state: WorktreeState) => {
-  await ensureStateDir(statePath);
+  const dirResult = await ensureConfigDir(statePath);
+  if (!dirResult.ok) return dirResult;
+
   const content = `${JSON.stringify(state, null, 2)}\n`;
-  await writeFile(statePath, content, "utf8");
+  try {
+    await writeFile(statePath, content, "utf8");
+    return { ok: true as const };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false as const,
+      error: formatError("Unable to write state file.", {
+        details: message,
+      }),
+    };
+  }
 };
 
 export const storeSessionMapping = async (entry: WorktreeSessionEntry) => {
@@ -91,18 +93,9 @@ export const storeSessionMapping = async (entry: WorktreeSessionEntry) => {
   );
   const nextState: WorktreeState = { entries: [...filtered, entry] };
 
-  try {
-    await writeState(stateResult.path, nextState);
-    return { ok: true as const, path: stateResult.path };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      ok: false as const,
-      error: formatError("Unable to write state file.", {
-        details: message,
-      }),
-    };
-  }
+  const writeResult = await writeState(stateResult.path, nextState);
+  if (!writeResult.ok) return writeResult;
+  return { ok: true as const, path: stateResult.path };
 };
 
 export const removeSessionMappings = async (sessionID: string) => {
@@ -116,16 +109,7 @@ export const removeSessionMappings = async (sessionID: string) => {
     return { ok: true as const, removed: 0, path: stateResult.path };
   }
 
-  try {
-    await writeState(stateResult.path, { entries: nextEntries });
-    return { ok: true as const, removed: removedCount, path: stateResult.path };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      ok: false as const,
-      error: formatError("Unable to write state file.", {
-        details: message,
-      }),
-    };
-  }
+  const writeResult = await writeState(stateResult.path, { entries: nextEntries });
+  if (!writeResult.ok) return writeResult;
+  return { ok: true as const, removed: removedCount, path: stateResult.path };
 };

@@ -35,110 +35,105 @@ bun run build
 }
 ```
 
+## Worktree mode
+
+Worktree tools are gated behind worktree mode so they do not clutter the default tool list.
+Enable it when you want to work with worktrees, then disable it when you are done.
+
+```text
+worktree_mode { "action": "on" }
+worktree_mode { "action": "off" }
+```
+
+`worktree_mode` also prints a help sheet with examples and defaults.
+
 ## Tools
 
-- `worktree_list` — list worktrees with branch/path/HEAD info.
-- `worktree_status` — summarize dirty/clean status per worktree.
-- `worktree_create` — create a worktree (optionally create a branch).
-- `worktree_start` — create a worktree and start a new session.
-- `worktree_fork` — create a worktree and fork the current session into it.
-- `worktree_dashboard` — overview of known worktrees/sessions.
-- `worktree_swarm` — create multiple worktrees and fork sessions.
-- `worktree_remove` — remove a worktree (guarded unless `force: true`).
-- `worktree_prune` — run `git worktree prune` (optionally `dryRun`).
-- `worktree_help` — show a quick help sheet.
+- `worktree_mode` — enable/disable worktree mode and show help.
+- `worktree_overview` — list, status, or dashboard worktrees.
+- `worktree_make` — create/open/fork worktrees and sessions.
+- `worktree_cleanup` — remove or prune worktrees safely.
 
 ### Examples
+
+Enable worktree mode:
+
+```text
+worktree_mode { "action": "on" }
+```
 
 List worktrees:
 
 ```text
-worktree_list
+worktree_overview
 ```
 
 Status for all worktrees:
 
 ```text
-worktree_status
-```
-
-Status for a single worktree path:
-
-```text
-worktree_status { "path": "/path/to/repo.worktrees/feature-a" }
-```
-
-Create a worktree (branch derived from name):
-
-```text
-worktree_create { "name": "feature audit" }
-```
-
-Create a worktree with explicit branch and base:
-
-```text
-worktree_create { "name": "audit", "branch": "feature/audit", "base": "main" }
-```
-
-Start a new session in a worktree:
-
-```text
-worktree_start { "name": "feature audit", "openSessions": true }
-```
-
-Fork the current session into a worktree:
-
-```text
-worktree_fork { "name": "feature audit", "openSessions": true }
+worktree_overview { "view": "status" }
 ```
 
 Show the worktree/session dashboard:
 
 ```text
-worktree_dashboard
+worktree_overview { "view": "dashboard" }
+```
+
+Create a worktree (branch derived from name):
+
+```text
+worktree_make { "action": "create", "name": "feature audit" }
+```
+
+Start a new session (creates or reuses a worktree):
+
+```text
+worktree_make { "action": "start", "name": "feature audit", "openSessions": true }
+```
+
+Open a session in an existing worktree:
+
+```text
+worktree_make { "action": "open", "pathOrBranch": "feature/audit", "openSessions": true }
+```
+
+Fork the current session into a worktree:
+
+```text
+worktree_make { "action": "fork", "name": "feature audit", "openSessions": true }
 ```
 
 Create a swarm of worktrees/sessions:
 
 ```text
-worktree_swarm { "tasks": ["refactor-auth", "docs-refresh"], "openSessions": true }
-```
-
-Create a swarm with a custom branch prefix:
-
-```text
-worktree_swarm { "tasks": ["refactor-auth"], "prefix": "wt/" }
+worktree_make { "action": "swarm", "tasks": ["refactor-auth", "docs-refresh"], "openSessions": true }
 ```
 
 Remove a worktree:
 
 ```text
-worktree_remove { "pathOrBranch": "feature/audit" }
-```
-
-Force remove a dirty worktree:
-
-```text
-worktree_remove { "pathOrBranch": "feature/audit", "force": true }
+worktree_cleanup { "action": "remove", "pathOrBranch": "feature/audit" }
 ```
 
 Prune stale worktree entries:
 
 ```text
-worktree_prune { "dryRun": true }
+worktree_cleanup { "action": "prune", "dryRun": true }
 ```
 
 ## Defaults and safety
 
 - Default worktree path (when `path` is omitted):
-  - `<parent-of-repo>/<repo-name>.worktrees/<branch>`
+  - `<repo>/.worktrees/<branch>`
+- Relative `path` inputs are resolved under `.worktrees/` to prevent traversal.
 - Branch name is derived from `name` when `branch` is omitted (lowercased, spaces to `-`).
-- `worktree_remove` refuses to delete dirty worktrees unless `force: true`.
+- `worktree_cleanup` refuses to delete dirty worktrees unless `force: true`.
 - All tools return readable output with explicit paths and git commands.
 
 ## Session workflow
 
-`worktree_start` and `worktree_fork` create a worktree, then create a session in that directory.
+`worktree_make` actions (`start`, `open`, `fork`) create or reuse a worktree, then create a session in that directory.
 Each action records a mapping entry at:
 
 - `~/.config/opencode/open-trees/state.json` (or `${XDG_CONFIG_HOME}/opencode/open-trees/state.json`)
@@ -147,37 +142,28 @@ The session title defaults to `wt:<branch>`, and the output includes the session
 
 Swarm safety notes:
 
-- `worktree_swarm` refuses to reuse existing branches or paths unless `force: true`.
+- `worktree_make` with `action: "swarm"` refuses to reuse existing branches or paths unless `force: true`.
 - It never deletes existing worktrees; it only creates new ones.
 
 Optional command file examples:
 
 ```text
-# .opencode/command/wt-start.md
-worktree_start { "name": "$1", "openSessions": true }
+# .opencode/command/worktree-start.md
+worktree_make { "action": "start", "name": "$1", "openSessions": true }
 ```
 
 ```text
-# .opencode/command/wt-fork.md
-worktree_fork { "name": "$1", "openSessions": true }
+# .opencode/command/worktree-open.md
+worktree_make { "action": "open", "pathOrBranch": "$1", "openSessions": true }
 ```
 
 Slash commands (drop these files into `.opencode/command`):
 
 ```text
-/wt-help
-/wt-list
-/wt-status
-/wt-status-path <path>
-/wt-create <name>
-/wt-start <name>
-/wt-fork <name>
-/wt-dashboard
-/wt-swarm <task>
-/wt-remove <pathOrBranch>
-/wt-remove-force <pathOrBranch>
-/wt-prune
-/wt-prune-dry
+/worktree-on
+/worktree-overview
+/worktree-make <name>
+/worktree-clean <pathOrBranch>
 ```
 
 ## Development
@@ -191,3 +177,11 @@ bun run build
 bun run test
 bun run test:e2e
 ```
+
+## Versioning
+
+Open Trees follows Semantic Versioning and tracks notable changes in `CHANGELOG.md`.
+
+## Contributing
+
+See `CONTRIBUTING.md` for setup, testing, and release guidelines.

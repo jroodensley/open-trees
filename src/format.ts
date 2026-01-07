@@ -1,3 +1,4 @@
+// Keep error detail snippets compact in tool output.
 const MAX_DETAIL_LENGTH = 200;
 
 const pad = (value: string, width: number) => value.padEnd(width, " ");
@@ -10,9 +11,9 @@ const trimDetail = (value: string) => {
 };
 
 const quoteArg = (value: string) => {
-  if (value === "") return '""';
-  if (/[^A-Za-z0-9._\/-]/.test(value)) {
-    return JSON.stringify(value);
+  if (value === "") return "''";
+  if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
+    return `'${value.replace(/'/g, `'\"'\"'`)}'`;
   }
   return value;
 };

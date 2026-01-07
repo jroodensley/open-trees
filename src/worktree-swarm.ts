@@ -3,6 +3,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatError, renderTable } from "./format";
 import { formatGitFailure, getRepoRoot, runGit } from "./git";
 import { defaultWorktreePath, normalizeBranchName } from "./paths";
+import { type ToolResult, err, ok } from "./result";
 import { unwrapSdkResponse } from "./sdk";
 import { openSessionsUi, updateSessionTitle } from "./session-helpers";
 import { getStatePath, storeSessionMapping } from "./state";
@@ -37,21 +38,25 @@ export const swarmWorktrees = async (
   ctx: PluginInput,
   sessionID: string | undefined,
   options: SwarmOptions,
-) => {
+): Promise<ToolResult> => {
   if (!sessionID) {
-    return formatError("Current session ID is unavailable.", {
-      hint: "Run this tool from within an OpenCode session.",
-    });
+    return err(
+      formatError("Current session ID is unavailable.", {
+        hint: "Run this tool from within an OpenCode session.",
+      }),
+    );
   }
 
   if (!options.tasks || options.tasks.length === 0) {
-    return formatError("Tasks array is required.", {
-      hint: "Provide one or more task names.",
-    });
+    return err(
+      formatError("Tasks array is required.", {
+        hint: "Provide one or more task names.",
+      }),
+    );
   }
 
   const repoRoot = await getRepoRoot(ctx);
-  if (!repoRoot.ok) return repoRoot.error;
+  if (!repoRoot.ok) return err(repoRoot.error);
 
   const prefix = options.prefix ?? "wt/";
   const allowExisting = Boolean(options.force);
@@ -161,5 +166,5 @@ export const swarmWorktrees = async (
     sections.push(`Notes:\n${notes.map((note) => `- ${note}`).join("\n")}`);
   }
 
-  return sections.join("\n\n");
+  return ok(sections.join("\n\n"));
 };

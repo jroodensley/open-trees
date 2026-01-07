@@ -2,6 +2,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 
 import { formatError, renderTable } from "./format";
 import { runGit } from "./git";
+import { type ToolResult, err, ok } from "./result";
 import { unwrapSdkResponse } from "./sdk";
 import { readState } from "./state";
 import { summarizePorcelain } from "./status";
@@ -61,60 +62,70 @@ const resolveSessionUpdatedAt = async (ctx: PluginInput, sessionID: string, fall
   return { updatedAt };
 };
 
-export const dashboardWorktrees = async (ctx: PluginInput) => {
+export const dashboardWorktrees = async (ctx: PluginInput): Promise<ToolResult> => {
   const stateResult = await readState();
-  if (!stateResult.ok) return stateResult.error;
+  if (!stateResult.ok) return err(stateResult.error);
 
   if (stateResult.state.entries.length === 0) {
-    return formatError("No worktree sessions recorded.", {
-      hint: "Run worktree_start or worktree_fork to create a mapping.",
-    });
+    return err(
+      formatError("No worktree sessions recorded.", {
+        hint: 'Run worktree_make { "action": "start" } to create a mapping.',
+      }),
+    );
   }
 
-  const rows: string[][] = [];
-  const notes: string[] = [];
+  const results = await Promise.all(
+    stateResult.state.entries.map(async (entry) => {
+      const taskName = entry.branch;
+      const fallbackUpdatedAt = formatTimestamp(entry.createdAt);
+      const entryNotes: string[] = [];
 
-  for (const entry of stateResult.state.entries) {
-    const taskName = entry.branch;
-    const fallbackUpdatedAt = formatTimestamp(entry.createdAt);
+      if (!(await pathExists(entry.worktreePath))) {
+        return {
+          row: [
+            taskName,
+            entry.branch,
+            entry.worktreePath,
+            entry.sessionID,
+            "missing",
+            fallbackUpdatedAt,
+          ],
+          notes: [`${entry.worktreePath}: missing on disk`],
+        };
+      }
 
-    if (!(await pathExists(entry.worktreePath))) {
-      rows.push([
-        taskName,
-        entry.branch,
-        entry.worktreePath,
-        entry.sessionID,
-        "missing",
-        fallbackUpdatedAt,
+      const [branchResult, dirtyResult, sessionResult] = await Promise.all([
+        resolveBranch(ctx, entry.worktreePath, entry.branch),
+        resolveDirty(ctx, entry.worktreePath),
+        resolveSessionUpdatedAt(ctx, entry.sessionID, fallbackUpdatedAt),
       ]);
-      notes.push(`${entry.worktreePath}: missing on disk`);
-      continue;
-    }
 
-    const branchResult = await resolveBranch(ctx, entry.worktreePath, entry.branch);
-    if (branchResult.note) {
-      notes.push(`${entry.worktreePath}: ${branchResult.note}`);
-    }
+      if (branchResult.note) {
+        entryNotes.push(`${entry.worktreePath}: ${branchResult.note}`);
+      }
+      if (dirtyResult.note) {
+        entryNotes.push(`${entry.worktreePath}: ${dirtyResult.note}`);
+      }
+      if (sessionResult.note) {
+        entryNotes.push(`Session ${entry.sessionID}: ${sessionResult.note}`);
+      }
 
-    const dirtyResult = await resolveDirty(ctx, entry.worktreePath);
-    if (dirtyResult.note) {
-      notes.push(`${entry.worktreePath}: ${dirtyResult.note}`);
-    }
+      return {
+        row: [
+          taskName,
+          branchResult.branch,
+          entry.worktreePath,
+          entry.sessionID,
+          dirtyResult.dirty,
+          sessionResult.updatedAt,
+        ],
+        notes: entryNotes,
+      };
+    }),
+  );
 
-    const sessionResult = await resolveSessionUpdatedAt(ctx, entry.sessionID, fallbackUpdatedAt);
-    if (sessionResult.note) {
-      notes.push(`Session ${entry.sessionID}: ${sessionResult.note}`);
-    }
-
-    rows.push([
-      taskName,
-      branchResult.branch,
-      entry.worktreePath,
-      entry.sessionID,
-      dirtyResult.dirty,
-      sessionResult.updatedAt,
-    ]);
-  }
+  const rows = results.map((result) => result.row);
+  const notes = results.flatMap((result) => result.notes);
 
   const table = renderTable(
     ["task/name", "branch", "worktreePath", "sessionID", "dirty?", "updatedAt"],
@@ -127,5 +138,5 @@ export const dashboardWorktrees = async (ctx: PluginInput) => {
     sections.push(`Notes:\n${notes.map((note) => `- ${note}`).join("\n")}`);
   }
 
-  return sections.join("\n\n");
+  return ok(sections.join("\n\n"));
 };

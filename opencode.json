@@ -1,6 +1,4 @@
 {
-  "plugin": [
-    "/Users/sero/open-trees"
-  ],
+  "plugin": ["open-trees"],
   "$schema": "https://opencode.ai/config.json"
 }

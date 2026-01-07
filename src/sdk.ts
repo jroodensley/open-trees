@@ -21,6 +21,10 @@ const extractErrorMessage = (error: unknown) => {
 const isEnvelope = (value: unknown): value is SdkResponseEnvelope<unknown> =>
   typeof value === "object" && value !== null && ("data" in value || "error" in value);
 
+/**
+ * Normalize OpenCode SDK responses into a simple ok/error object.
+ * Handles envelope responses, missing data, and error payloads.
+ */
 export const unwrapSdkResponse = <T>(
   response: unknown,
   action: string,
@@ -46,6 +50,13 @@ export const unwrapSdkResponse = <T>(
   }
 
   if (response === undefined || response === null) {
+    return {
+      ok: false,
+      error: formatError(`${action} returned no data.`),
+    };
+  }
+
+  if (typeof response === "object" && response !== null && Object.keys(response).length === 0) {
     return {
       ok: false,
       error: formatError(`${action} returned no data.`),

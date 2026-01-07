@@ -5,6 +5,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatCommand, formatError, renderTable } from "./format";
 import { formatGitFailure, getRepoRoot, getWorktrees, runGit } from "./git";
 import { defaultWorktreePath, normalizeBranchName, resolveWorktreePath } from "./paths";
+import { type ToolResult, err, ok } from "./result";
 import { summarizePorcelain } from "./status";
 import {
   branchLabel,
@@ -16,12 +17,31 @@ import {
 
 export { statusWorktrees } from "./worktree-status";
 
-export const listWorktrees = async (ctx: PluginInput) => {
+const prepareWorktreeDirectory = async (worktreePath: string) => {
+  try {
+    await mkdir(worktreePath, { recursive: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false as const,
+      error: formatError("Unable to prepare worktree directory.", {
+        details: message,
+      }),
+    };
+  }
+
+  const emptyCheck = await ensureEmptyDirectory(worktreePath);
+  if (!emptyCheck.ok) return { ok: false as const, error: emptyCheck.error };
+
+  return { ok: true as const };
+};
+
+export const listWorktrees = async (ctx: PluginInput): Promise<ToolResult> => {
   const repoRoot = await getRepoRoot(ctx);
-  if (!repoRoot.ok) return repoRoot.error;
+  if (!repoRoot.ok) return err(repoRoot.error);
 
   const worktreesResult = await getWorktrees(ctx, repoRoot.path);
-  if (!worktreesResult.ok) return worktreesResult.error;
+  if (!worktreesResult.ok) return err(worktreesResult.error);
 
   const rows = worktreesResult.worktrees.map((worktree) => [
     branchLabel(worktree),
@@ -38,7 +58,7 @@ export const listWorktrees = async (ctx: PluginInput) => {
 
   const command = formatCommand(["git", "worktree", "list", "--porcelain"]);
 
-  return `Worktrees (${worktreesResult.worktrees.length}):\n${table}\nCommand: ${command}`;
+  return ok(`Worktrees (${worktreesResult.worktrees.length}):\n${table}\nCommand: ${command}`);
 };
 
 export type WorktreeCreateDetails = {
@@ -51,22 +71,22 @@ export type WorktreeCreateDetails = {
 
 export const createWorktreeDetails = async (
   ctx: PluginInput,
-  options: { name: string; branch?: string; base?: string; path?: string },
+  options: { name?: string; branch?: string; base?: string; path?: string },
 ) => {
   const repoRoot = await getRepoRoot(ctx);
   if (!repoRoot.ok) return { ok: false as const, error: repoRoot.error };
 
-  const name = options.name.trim();
-  if (!name) {
+  const name = options.name?.trim() ?? "";
+  const branchInput = options.branch?.trim();
+  if (!name && !branchInput) {
     return {
       ok: false as const,
-      error: formatError("Name is required.", {
-        hint: "Provide a logical name to derive the branch and directory.",
+      error: formatError("Name or branch is required.", {
+        hint: "Provide a logical name to derive the branch or an explicit branch.",
       }),
     };
   }
 
-  const branchInput = options.branch?.trim();
   const branch = branchInput || normalizeBranchName(name);
   if (!branch) {
     return {
@@ -89,16 +109,16 @@ export const createWorktreeDetails = async (
   }
 
   const base = options.base?.trim() || "HEAD";
-  const worktreePath = options.path
+  const pathResult = options.path
     ? resolveWorktreePath(repoRoot.path, options.path)
-    : defaultWorktreePath(repoRoot.path, branch);
-
-  if (await pathExists(worktreePath)) {
-    const emptyCheck = await ensureEmptyDirectory(worktreePath);
-    if (!emptyCheck.ok) return { ok: false as const, error: emptyCheck.error };
-  } else {
-    await mkdir(worktreePath, { recursive: true });
+    : { ok: true as const, path: defaultWorktreePath(repoRoot.path, branch) };
+  if (!pathResult.ok) {
+    return { ok: false as const, error: pathResult.error };
   }
+  const worktreePath = pathResult.path;
+
+  const prepareResult = await prepareWorktreeDirectory(worktreePath);
+  if (!prepareResult.ok) return prepareResult;
 
   const branchExists = await runGit(
     ctx,
@@ -134,10 +154,10 @@ export const createWorktreeDetails = async (
 
 export const createWorktree = async (
   ctx: PluginInput,
-  options: { name: string; branch?: string; base?: string; path?: string },
-) => {
+  options: { name?: string; branch?: string; base?: string; path?: string },
+): Promise<ToolResult> => {
   const result = await createWorktreeDetails(ctx, options);
-  if (!result.ok) return result.error;
+  if (!result.ok) return err(result.error);
 
   const lines = [
     "Worktree created.",
@@ -152,46 +172,55 @@ export const createWorktree = async (
     lines.push("Note: Base ignored because the branch already exists.");
   }
 
-  return lines.join("\n");
+  return ok(lines.join("\n"));
 };
 
 export const removeWorktree = async (
   ctx: PluginInput,
   options: { pathOrBranch: string; force?: boolean },
-) => {
+): Promise<ToolResult> => {
   const repoRoot = await getRepoRoot(ctx);
-  if (!repoRoot.ok) return repoRoot.error;
+  if (!repoRoot.ok) return err(repoRoot.error);
 
   const worktreesResult = await getWorktrees(ctx, repoRoot.path);
-  if (!worktreesResult.ok) return worktreesResult.error;
+  if (!worktreesResult.ok) return err(worktreesResult.error);
 
   const input = options.pathOrBranch.trim();
   if (!input) {
-    return formatError("pathOrBranch is required.", {
-      hint: "Provide a worktree path or branch name.",
-    });
+    return err(
+      formatError("pathOrBranch is required.", {
+        hint: "Provide a worktree path or branch name.",
+      }),
+    );
   }
 
-  const matches = findWorktreeMatch(worktreesResult.worktrees, repoRoot.path, input);
+  const matchResult = findWorktreeMatch(worktreesResult.worktrees, repoRoot.path, input);
+  if (!matchResult.ok) return err(matchResult.error);
 
-  if (matches.length === 0) {
-    return formatError("No worktree matches the provided value.", {
-      hint: "Use worktree_list to see available worktrees.",
-    });
+  if (matchResult.matches.length === 0) {
+    return err(
+      formatError("No worktree matches the provided value.", {
+        hint: 'Use worktree_overview { "view": "list" } to see available worktrees.',
+      }),
+    );
   }
 
-  if (matches.length > 1) {
-    return formatError("Multiple worktrees match the provided value.", {
-      details: matches.map((match) => match.path).join(", "),
-    });
+  if (matchResult.matches.length > 1) {
+    return err(
+      formatError("Multiple worktrees match the provided value.", {
+        details: matchResult.matches.map((match) => match.path).join(", "),
+      }),
+    );
   }
 
-  const target = matches[0];
+  const target = matchResult.matches[0];
 
   if (!(await pathExists(target.path))) {
-    return formatError("Worktree path does not exist.", {
-      hint: "If it was deleted manually, run worktree_prune instead.",
-    });
+    return err(
+      formatError("Worktree path does not exist.", {
+        hint: 'If it was deleted manually, run worktree_cleanup { "action": "prune" } instead.',
+      }),
+    );
   }
 
   if (!options.force) {
@@ -200,14 +229,16 @@ export const removeWorktree = async (
     });
 
     if (!statusResult.ok) {
-      return formatGitFailure(statusResult, "Unable to check worktree status.");
+      return err(formatGitFailure(statusResult, "Unable to check worktree status."));
     }
 
     const summary = summarizePorcelain(statusResult.stdout);
     if (!summary.clean) {
-      return formatError("Worktree has uncommitted changes.", {
-        hint: "Re-run with force: true to remove anyway.",
-      });
+      return err(
+        formatError("Worktree has uncommitted changes.", {
+          hint: "Re-run with force: true to remove anyway.",
+        }),
+      );
     }
   }
 
@@ -217,7 +248,7 @@ export const removeWorktree = async (
   const command = formatCommand(["git", ...args]);
 
   const removeResult = await runGit(ctx, args, { cwd: repoRoot.path });
-  if (!removeResult.ok) return formatGitFailure(removeResult);
+  if (!removeResult.ok) return err(formatGitFailure(removeResult));
 
   const lines = [
     "Worktree removed.",
@@ -230,18 +261,21 @@ export const removeWorktree = async (
     lines.push("Note: Removed with --force.");
   }
 
-  return lines.join("\n");
+  return ok(lines.join("\n"));
 };
 
-export const pruneWorktrees = async (ctx: PluginInput, options: { dryRun?: boolean }) => {
+export const pruneWorktrees = async (
+  ctx: PluginInput,
+  options: { dryRun?: boolean },
+): Promise<ToolResult> => {
   const repoRoot = await getRepoRoot(ctx);
-  if (!repoRoot.ok) return repoRoot.error;
+  if (!repoRoot.ok) return err(repoRoot.error);
 
   const args = options.dryRun ? ["worktree", "prune", "--dry-run"] : ["worktree", "prune"];
   const command = formatCommand(["git", ...args]);
 
   const pruneResult = await runGit(ctx, args, { cwd: repoRoot.path });
-  if (!pruneResult.ok) return formatGitFailure(pruneResult);
+  if (!pruneResult.ok) return err(formatGitFailure(pruneResult));
 
   const output = pruneResult.stdout.trim();
   const lines = [
@@ -250,5 +284,5 @@ export const pruneWorktrees = async (ctx: PluginInput, options: { dryRun?: boole
     output ? `Output: ${output}` : "Output: (none)",
   ];
 
-  return lines.join("\n");
+  return ok(lines.join("\n"));
 };

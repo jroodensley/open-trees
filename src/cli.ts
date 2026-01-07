@@ -2,6 +2,7 @@
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { formatError } from "./format";
 import { updateConfigText } from "./opencode-config";
@@ -26,7 +27,7 @@ Options:
   --help     Show this help
 `;
 
-const parseArgs = (argv: string[]): CliOptions | { error: string } => {
+export const parseArgs = (argv: string[]): CliOptions | { error: string } => {
   const args = [...argv];
   const first = args[0];
   const command = first && !first.startsWith("-") ? (args.shift() as string) : "add";
@@ -146,4 +147,11 @@ const run = async () => {
   console.log(lines.join("\n"));
 };
 
-await run();
+const isMain = () => {
+  if (!process.argv[1]) return false;
+  return path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+};
+
+if (isMain()) {
+  await run();
+}

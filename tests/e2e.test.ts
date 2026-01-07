@@ -24,8 +24,10 @@ const runCli = async (args: string[], cwd: string) => {
     stdout: "pipe",
     stderr: "pipe",
   });
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
+  const [stdout, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
   const exitCode = await proc.exited;
   return { stdout, stderr, exitCode };
 };
@@ -43,7 +45,7 @@ test("open-trees add writes config when missing", async () => {
     expect(result.stdout).toContain("Added plugin");
 
     const text = await readFile(configPath, "utf8");
-    expect(text).toContain("\"plugin\"");
+    expect(text).toContain('"plugin"');
     expect(text).toContain("open-trees");
   } finally {
     await rm(tempDir, { recursive: true, force: true });
@@ -59,10 +61,7 @@ test("open-trees add dry-run does not write config", async () => {
 
   try {
     await writeFile(configPath, original, "utf8");
-    const result = await runCli(
-      [cliPath, "add", "--config", configPath, "--dry-run"],
-      root,
-    );
+    const result = await runCli([cliPath, "add", "--config", configPath, "--dry-run"], root);
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr.trim()).toBe("");

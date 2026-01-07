@@ -124,6 +124,8 @@ export const parseWorktreeList = (output: string): WorktreeInfo[] => {
     current = null;
   };
 
+  // `git worktree list --porcelain` emits blank-line-delimited blocks. We treat each
+  // block as a worktree and collect key/value pairs until the next blank line.
   for (const line of lines) {
     if (!line.trim()) {
       commitCurrent();

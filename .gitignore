@@ -3,9 +3,12 @@ node_modules
 dist
 bun.lockb
 bun.lock
+package-lock.json
 .opencode/*
 !.opencode/command/
 !.opencode/command/*.md
 coverage/
 .DS_Store
 *.log
+.worktree
+.worktrees/

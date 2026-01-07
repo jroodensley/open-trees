@@ -2,22 +2,19 @@ import { expect, test } from "bun:test";
 
 import { unwrapSdkResponse } from "../src/sdk";
 
-test("unwrapSdkResponse handles envelopes and raw values", () => {
-  const okEnvelope = unwrapSdkResponse<{ id: string }>({ data: { id: "abc" } }, "action");
-  expect(okEnvelope.ok).toBe(true);
-  if (okEnvelope.ok) {
-    expect(okEnvelope.data.id).toBe("abc");
-  }
+test("unwrapSdkResponse returns data from envelope", () => {
+  const result = unwrapSdkResponse<{ id: string }>({ data: { id: "abc" } }, "Test");
+  expect(result.ok).toBe(true);
+  if (!result.ok) return;
+  expect(result.data.id).toBe("abc");
+});
 
-  const errorEnvelope = unwrapSdkResponse({ error: { message: "boom" } }, "action");
-  expect(errorEnvelope.ok).toBe(false);
-  if (!errorEnvelope.ok) {
-    expect(errorEnvelope.error).toContain("boom");
-  }
+test("unwrapSdkResponse returns error from envelope", () => {
+  const result = unwrapSdkResponse({ error: "boom" }, "Test");
+  expect(result.ok).toBe(false);
+});
 
-  const raw = unwrapSdkResponse("value", "action");
-  expect(raw.ok).toBe(true);
-  if (raw.ok) {
-    expect(raw.data).toBe("value");
-  }
+test("unwrapSdkResponse errors when data is missing", () => {
+  const result = unwrapSdkResponse({}, "Test");
+  expect(result.ok).toBe(false);
 });

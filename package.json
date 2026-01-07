@@ -1,6 +1,6 @@
 {
   "name": "open-trees",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenCode plugin for safe git worktree workflows.",
   "type": "module",
   "main": "dist/index.js",
@@ -23,6 +23,15 @@
     "test": "bun test",
     "test:e2e": "bun test tests/e2e.test.ts"
   },
+  "author": "0xSero",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xSero/open-trees.git"
+  },
+  "bugs": {
+    "url": "https://github.com/0xSero/open-trees/issues"
+  },
+  "homepage": "https://github.com/0xSero/open-trees#readme",
   "keywords": ["opencode", "plugin", "git", "worktree"],
   "license": "MIT",
   "dependencies": {
