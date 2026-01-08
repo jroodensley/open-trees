@@ -2,7 +2,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 
 import { formatError, renderTable } from "./format";
 import { runGit } from "./git";
-import { type ToolResult, err, ok } from "./result";
+import { err, ok, type ToolResult } from "./result";
 import { unwrapSdkResponse } from "./sdk";
 import { readState } from "./state";
 import { summarizePorcelain } from "./status";

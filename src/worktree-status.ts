@@ -3,7 +3,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatCommand, formatError, renderTable } from "./format";
 import { getRepoRoot, getWorktrees, runGit } from "./git";
 import { pathsEqual, resolveWorktreePath } from "./paths";
-import { type ToolResult, err, ok } from "./result";
+import { err, ok, type ToolResult } from "./result";
 import { summarizePorcelain } from "./status";
 import { branchLabel, pathExists } from "./worktree-helpers";
 

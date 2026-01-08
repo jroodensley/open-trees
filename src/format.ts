@@ -13,7 +13,7 @@ const trimDetail = (value: string) => {
 const quoteArg = (value: string) => {
   if (value === "") return "''";
   if (!/^[A-Za-z0-9._/-]+$/.test(value)) {
-    return `'${value.replace(/'/g, `'\"'\"'`)}'`;
+    return `'${value.replace(/'/g, `'"'"'`)}'`;
   }
   return value;
 };

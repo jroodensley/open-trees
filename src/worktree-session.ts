@@ -1,9 +1,9 @@
 import type { PluginInput } from "@opencode-ai/plugin";
 
 import { formatError } from "./format";
-import { type WorktreeInfo, getRepoRoot, getWorktrees } from "./git";
+import { getRepoRoot, getWorktrees, type WorktreeInfo } from "./git";
 import { normalizeBranchName, pathsEqual, resolveWorktreePath } from "./paths";
-import { type ToolResult, err, ok } from "./result";
+import { err, ok, type ToolResult } from "./result";
 import { unwrapSdkResponse } from "./sdk";
 import { openSessionsUi, updateSessionTitle } from "./session-helpers";
 import { storeSessionMapping } from "./state";
