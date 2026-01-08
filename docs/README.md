@@ -67,11 +67,11 @@ open-trees/
 ## Quick Start
 
 ```bash
-# Install the plugin
-bun add open-trees
-
-# Add to OpenCode config
+# Add to OpenCode config (single command)
 bunx open-trees add
+
+# Start OpenCode (plugins install automatically on startup)
+opencode
 
 # Enable worktree mode
 worktree_mode { "action": "on" }

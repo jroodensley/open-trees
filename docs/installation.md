@@ -11,15 +11,18 @@
 - [Git](https://git-scm.com/) 2.15+ with worktree support
 - [OpenCode](https://opencode.ai/) AI assistant
 
-## Install via Bun
+## Single-Command Install
 
 ```bash
-bun add open-trees
+bunx open-trees add
 ```
 
-## Configure OpenCode
+This updates your OpenCode config (default: `~/.config/opencode/opencode.json`).
+OpenCode installs npm plugins automatically at startup (cached in `~/.cache/opencode/node_modules`).
 
-Add the plugin to your OpenCode configuration file (typically `~/.config/opencode/opencode.json`):
+## Manual Config
+
+Add the plugin to your OpenCode configuration file:
 
 ```json
 {
@@ -27,10 +30,10 @@ Add the plugin to your OpenCode configuration file (typically `~/.config/opencod
 }
 ```
 
-Or use the built-in CLI helper:
+Optional: target a specific config file:
 
 ```bash
-bunx open-trees add
+bunx open-trees add --config /path/to/opencode.json
 ```
 
 ### CLI Options
