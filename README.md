@@ -9,22 +9,21 @@ OpenCode plugin for fast, safe `git worktree` workflows.
 
 ## Install
 
+Single command (recommended):
+
 ```bash
-bun add open-trees
+bunx open-trees add
 ```
 
-Add the plugin to your OpenCode config (usually `~/.config/opencode/opencode.json`):
+This updates your OpenCode config (default: `~/.config/opencode/opencode.json`).
+OpenCode installs npm plugins automatically at startup (cached in `~/.cache/opencode/node_modules`).
+
+Manual config:
 
 ```json
 {
   "plugin": ["open-trees"]
 }
-```
-
-Or run the helper CLI:
-
-```bash
-bunx open-trees add
 ```
 
 For local development, build the plugin and point OpenCode at the local package:

@@ -141,7 +141,9 @@ const run = async () => {
     updateResult.changed
       ? `Added plugin: ${parsed.pluginName}`
       : `Plugin already present: ${parsed.pluginName}`,
-    parsed.dryRun ? "Dry run: no changes written" : "",
+    parsed.dryRun
+      ? "Dry run: no changes written"
+      : "Next: restart OpenCode to install the plugin (cached in ~/.cache/opencode/node_modules).",
   ].filter(Boolean);
 
   console.log(lines.join("\n"));
