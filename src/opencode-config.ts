@@ -1,4 +1,4 @@
-import { type ParseError, applyEdits, modify, parse, printParseErrorCode } from "jsonc-parser";
+import { applyEdits, modify, type ParseError, parse, printParseErrorCode } from "jsonc-parser";
 
 import { formatError } from "./format";
 

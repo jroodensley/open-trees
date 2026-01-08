@@ -57,7 +57,7 @@ test("open-trees add dry-run does not write config", async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), "open-trees-e2e-"));
   const configPath = path.join(tempDir, "opencode.json");
   const cliPath = await resolveCliPath(root);
-  const original = `{\n  \"plugin\": [\"alpha\"]\n}\n`;
+  const original = `{\n  "plugin": ["alpha"]\n}\n`;
 
   try {
     await writeFile(configPath, original, "utf8");

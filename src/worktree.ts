@@ -5,7 +5,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatCommand, formatError, renderTable } from "./format";
 import { formatGitFailure, getRepoRoot, getWorktrees, runGit } from "./git";
 import { defaultWorktreePath, normalizeBranchName, resolveWorktreePath } from "./paths";
-import { type ToolResult, err, ok } from "./result";
+import { err, ok, type ToolResult } from "./result";
 import { summarizePorcelain } from "./status";
 import {
   branchLabel,

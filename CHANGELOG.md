@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [1.0.1] - 2026-01-08
+
+### Changed
+- Patch release following 1.0.0.
+
+## [1.0.0] - 2026-01-08
+
+### Added
+- Stable 1.0.0 release with full worktree management capabilities.
+- Published to npm for public installation.
+- Comprehensive documentation and brand assets.
+- Native `/worktree on|off` slash command for toggling worktree mode and emitting help.
+
+### Changed
+- Optional command examples now use `/worktree on` and `/worktree off` instead of `/worktree-on`.
+
 ## [0.2.0] - 2026-01-07
 
 ### Added

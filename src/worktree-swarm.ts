@@ -3,7 +3,7 @@ import type { PluginInput } from "@opencode-ai/plugin";
 import { formatError, renderTable } from "./format";
 import { formatGitFailure, getRepoRoot, runGit } from "./git";
 import { defaultWorktreePath, normalizeBranchName } from "./paths";
-import { type ToolResult, err, ok } from "./result";
+import { err, ok, type ToolResult } from "./result";
 import { unwrapSdkResponse } from "./sdk";
 import { openSessionsUi, updateSessionTitle } from "./session-helpers";
 import { getStatePath, storeSessionMapping } from "./state";
